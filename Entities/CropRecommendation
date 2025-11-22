@@ -1,0 +1,75 @@
+{
+  "name": "CropRecommendation",
+  "type": "object",
+  "properties": {
+    "farmer_location": {
+      "type": "string",
+      "description": "State and district of farmer"
+    },
+    "soil_type": {
+      "type": "string",
+      "description": "Type of soil"
+    },
+    "season": {
+      "type": "string",
+      "enum": [
+        "kharif",
+        "rabi",
+        "zaid"
+      ],
+      "description": "Current season"
+    },
+    "recommended_crops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "crop_name": {
+            "type": "string"
+          },
+          "variety": {
+            "type": "string"
+          },
+          "profitability_score": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "market_demand": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "seed_availability": {
+            "type": "string",
+            "enum": [
+              "available",
+              "limited",
+              "not_available"
+            ]
+          }
+        }
+      }
+    },
+    "ai_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "AI confidence in recommendations"
+    },
+    "recommendation_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when recommendation was generated"
+    }
+  },
+  "required": [
+    "farmer_location",
+    "soil_type",
+    "season",
+    "recommended_crops"
+  ]
+}

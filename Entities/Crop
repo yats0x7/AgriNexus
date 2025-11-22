@@ -1,0 +1,82 @@
+{
+  "name": "Crop",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the crop"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "cereals",
+        "pulses",
+        "oilseeds",
+        "vegetables",
+        "fruits",
+        "spices",
+        "cash_crops"
+      ],
+      "description": "Category of the crop"
+    },
+    "season": {
+      "type": "string",
+      "enum": [
+        "kharif",
+        "rabi",
+        "zaid",
+        "perennial"
+      ],
+      "description": "Growing season"
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "States where this crop is grown"
+    },
+    "sowing_period": {
+      "type": "string",
+      "description": "Optimal sowing time"
+    },
+    "harvesting_period": {
+      "type": "string",
+      "description": "Harvesting time"
+    },
+    "water_requirement": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "description": "Water requirement level"
+    },
+    "soil_type": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Suitable soil types"
+    },
+    "market_price_per_quintal": {
+      "type": "number",
+      "description": "Current market price per quintal"
+    },
+    "demand_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "description": "Current market demand"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "season"
+  ]
+}

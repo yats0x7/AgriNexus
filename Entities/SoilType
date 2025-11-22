@@ -1,0 +1,39 @@
+{
+  "name": "SoilType",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of soil type"
+    },
+    "ph_range": {
+      "type": "string",
+      "description": "pH range of the soil"
+    },
+    "suitable_crops": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Crops suitable for this soil type"
+    },
+    "characteristics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key characteristics of the soil"
+    },
+    "states_found": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "States where this soil is commonly found"
+    }
+  },
+  "required": [
+    "name",
+    "suitable_crops"
+  ]
+}

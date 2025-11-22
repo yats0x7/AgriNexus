@@ -1,0 +1,48 @@
+{
+  "name": "ExpertAdvice",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the advisory or FAQ"
+    },
+    "content": {
+      "type": "string",
+      "description": "The detailed official advice or answer"
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of the information (e.g., ICAR, KVK Pune)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Pest Control",
+        "Irrigation",
+        "Soil Health",
+        "Fertilizers",
+        "Harvesting",
+        "General"
+      ],
+      "description": "Category of the advice"
+    },
+    "crop_relevance": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Crops this advice is relevant for (e.g., Rice, Wheat)"
+    },
+    "publish_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the advice was published"
+    }
+  },
+  "required": [
+    "title",
+    "content",
+    "source",
+    "category"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "Expert",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Expert's full name"
+    },
+    "specialization": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Areas of expertise"
+    },
+    "qualification": {
+      "type": "string",
+      "description": "Educational qualifications"
+    },
+    "experience_years": {
+      "type": "number",
+      "description": "Years of experience"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Expert rating out of 5"
+    },
+    "consultation_fee": {
+      "type": "number",
+      "description": "Consultation fee per session"
+    },
+    "available_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Available time slots"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Languages spoken"
+    },
+    "contact_number": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "location": {
+      "type": "string",
+      "description": "Location/district of operation"
+    },
+    "profile_image": {
+      "type": "string",
+      "description": "Profile image URL"
+    }
+  },
+  "required": [
+    "name",
+    "specialization",
+    "rating"
+  ]
+}

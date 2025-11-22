@@ -1,0 +1,65 @@
+{
+  "name": "WeatherAlert",
+  "type": "object",
+  "properties": {
+    "location": {
+      "type": "string",
+      "description": "State, district, village location"
+    },
+    "alert_type": {
+      "type": "string",
+      "enum": [
+        "rainfall",
+        "drought",
+        "heatwave",
+        "cyclone",
+        "flood",
+        "hail"
+      ],
+      "description": "Type of weather alert"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "moderate",
+        "high",
+        "extreme"
+      ],
+      "description": "Alert severity level"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed alert description"
+    },
+    "advisory": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Agricultural advisory based on alert"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Alert validity start date"
+    },
+    "valid_till": {
+      "type": "string",
+      "format": "date",
+      "description": "Alert validity end date"
+    },
+    "issued_by": {
+      "type": "string",
+      "description": "Issuing authority"
+    }
+  },
+  "required": [
+    "location",
+    "alert_type",
+    "severity",
+    "description",
+    "valid_from",
+    "valid_till"
+  ]
+}

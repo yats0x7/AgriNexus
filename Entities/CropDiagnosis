@@ -1,0 +1,71 @@
+{
+  "name": "CropDiagnosis",
+  "type": "object",
+  "properties": {
+    "farmer_name": {
+      "type": "string",
+      "description": "Name of the farmer"
+    },
+    "crop_type": {
+      "type": "string",
+      "description": "Type of crop"
+    },
+    "problem_description": {
+      "type": "string",
+      "description": "Description of the crop problem"
+    },
+    "image_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of uploaded crop/leaf images"
+    },
+    "ai_diagnosis": {
+      "type": "string",
+      "description": "AI-generated diagnosis"
+    },
+    "recommended_solution": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recommended solutions"
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "AI confidence score"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "diagnosed",
+        "under_review",
+        "resolved"
+      ],
+      "default": "diagnosed",
+      "description": "Diagnosis status"
+    },
+    "location": {
+      "type": "string",
+      "description": "Farmer's location"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "description": "Problem severity level"
+    }
+  },
+  "required": [
+    "farmer_name",
+    "crop_type",
+    "problem_description"
+  ]
+}

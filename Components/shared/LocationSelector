@@ -1,0 +1,59 @@
+import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin } from "lucide-react";
+
+const indianStates = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
+    "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
+
+// Mock districts for demonstration
+const districtsByState = {
+    "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
+    "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala"],
+    "Uttar Pradesh": ["Lucknow", "Kanpur", "Ghaziabad", "Agra", "Muzaffarnagar"],
+    "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore"],
+    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],
+};
+
+export default function LocationSelector({ selectedState, setSelectedState, selectedDistrict, setSelectedDistrict, className }) {
+    const handleStateChange = (state) => {
+        setSelectedState(state);
+        setSelectedDistrict(""); // Reset district when state changes
+    };
+
+    return (
+        <div className={`flex flex-col md:flex-row items-center gap-4 p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-green-200/50 shadow-lg ${className}`}>
+            <div className="flex items-center gap-2 text-lg font-semibold text-green-700 w-full md:w-auto">
+                <MapPin className="w-6 h-6" />
+                <span>Your Location</span>
+            </div>
+            <div className="flex-1 w-full">
+                <Select value={selectedState} onValueChange={handleStateChange}>
+                    <SelectTrigger className="w-full bg-white">
+                        <SelectValue placeholder="Select State" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {indianStates.map(state => (
+                            <SelectItem key={state} value={state}>{state}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex-1 w-full">
+                <Select value={selectedDistrict} onValueChange={setSelectedDistrict} disabled={!selectedState}>
+                    <SelectTrigger className="w-full bg-white">
+                        <SelectValue placeholder="Select District" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {districtsByState[selectedState]?.map(district => (
+                            <SelectItem key={district} value={district}>{district}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,64 @@
+{
+  "name": "EmbedSite",
+  "type": "object",
+  "properties": {
+    "site_name": {
+      "type": "string",
+      "description": "Name of the embedding site"
+    },
+    "site_url": {
+      "type": "string",
+      "description": "Base URL of the site"
+    },
+    "api_key": {
+      "type": "string",
+      "description": "Unique API key for this site"
+    },
+    "embed_type": {
+      "type": "string",
+      "enum": [
+        "iframe_widget",
+        "javascript_widget_snippet",
+        "full_page_link"
+      ],
+      "description": "Type of embed integration"
+    },
+    "theme_config": {
+      "type": "object",
+      "properties": {
+        "primary_color": {
+          "type": "string"
+        },
+        "secondary_color": {
+          "type": "string"
+        },
+        "font_family": {
+          "type": "string"
+        },
+        "border_radius": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string",
+          "default": "English"
+        }
+      },
+      "description": "Theme customization settings"
+    },
+    "rate_limit": {
+      "type": "number",
+      "default": 1000,
+      "description": "Requests per hour limit"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the site is active"
+    }
+  },
+  "required": [
+    "site_name",
+    "site_url",
+    "api_key"
+  ]
+}

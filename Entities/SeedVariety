@@ -1,0 +1,152 @@
+{
+  "name": "SeedVariety",
+  "type": "object",
+  "properties": {
+    "crop_name": {
+      "type": "string",
+      "description": "Standardized crop name"
+    },
+    "variety": {
+      "type": "string",
+      "description": "Seed variety name"
+    },
+    "seed_type": {
+      "type": "string",
+      "enum": [
+        "OP",
+        "Hybrid",
+        "Hybrid-HT",
+        "Certified",
+        "Organic"
+      ],
+      "description": "Type of seed"
+    },
+    "state": {
+      "type": "string",
+      "description": "State where available"
+    },
+    "district": {
+      "type": "string",
+      "description": "District where available"
+    },
+    "availability_status": {
+      "type": "string",
+      "enum": [
+        "InStock",
+        "Limited",
+        "OutOfStock"
+      ],
+      "description": "Current availability status"
+    },
+    "supplier_name": {
+      "type": "string",
+      "description": "Name of the seed supplier"
+    },
+    "supplier_contact": {
+      "type": "object",
+      "properties": {
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string"
+        }
+      },
+      "description": "Supplier contact information"
+    },
+    "price": {
+      "type": "number",
+      "description": "Price per unit in INR"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "kg",
+        "quintal",
+        "packet"
+      ],
+      "description": "Unit of measurement"
+    },
+    "certification": {
+      "type": "string",
+      "enum": [
+        "NSC",
+        "StateCertified",
+        "None"
+      ],
+      "description": "Certification type"
+    },
+    "recommended_season": {
+      "type": "string",
+      "enum": [
+        "Kharif",
+        "Rabi",
+        "Zaid"
+      ],
+      "description": "Recommended season for sowing"
+    },
+    "sowing_window": {
+      "type": "object",
+      "properties": {
+        "start_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "description": "Optimal sowing window"
+    },
+    "expected_yield": {
+      "type": "string",
+      "description": "Expected yield per hectare"
+    },
+    "soil_suitability": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Loamy",
+          "Sandy",
+          "Clay",
+          "Alluvial",
+          "Black",
+          "Red",
+          "Laterite"
+        ]
+      },
+      "description": "Suitable soil types"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source (SeedNet, Kisan Suvidha, etc.)"
+    },
+    "source_link": {
+      "type": "string",
+      "description": "URL to original government source"
+    },
+    "suitability_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "AI-calculated suitability score"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last data update timestamp"
+    }
+  },
+  "required": [
+    "crop_name",
+    "variety",
+    "state",
+    "availability_status",
+    "source"
+  ]
+}

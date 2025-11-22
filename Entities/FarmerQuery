@@ -1,0 +1,50 @@
+{
+  "name": "FarmerQuery",
+  "type": "object",
+  "properties": {
+    "farmer_name": {
+      "type": "string",
+      "description": "Name of the farmer submitting the query"
+    },
+    "location": {
+      "type": "string",
+      "description": "Farmer's location (District, State)"
+    },
+    "crop_type": {
+      "type": "string",
+      "description": "Crop related to the query"
+    },
+    "query_text": {
+      "type": "string",
+      "description": "The farmer's question"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Optional URL of an image uploaded by the farmer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "under_review",
+        "answered",
+        "closed"
+      ],
+      "default": "submitted",
+      "description": "Status of the query"
+    },
+    "expert_response": {
+      "type": "string",
+      "description": "The official answer from an expert"
+    },
+    "ai_summary": {
+      "type": "string",
+      "description": "AI-generated simple summary of the expert's response"
+    }
+  },
+  "required": [
+    "farmer_name",
+    "location",
+    "query_text"
+  ]
+}

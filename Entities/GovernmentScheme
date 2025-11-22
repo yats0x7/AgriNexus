@@ -1,0 +1,83 @@
+{
+  "name": "GovernmentScheme",
+  "type": "object",
+  "properties": {
+    "scheme_name": {
+      "type": "string",
+      "description": "Name of the government scheme"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the scheme"
+    },
+    "eligibility_criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Eligibility requirements"
+    },
+    "benefits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Benefits provided by the scheme"
+    },
+    "application_process": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Steps to apply for the scheme"
+    },
+    "required_documents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Documents required for application"
+    },
+    "state": {
+      "type": "string",
+      "description": "State where scheme is applicable"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "subsidy",
+        "loan",
+        "insurance",
+        "training",
+        "equipment",
+        "seeds"
+      ],
+      "description": "Category of the scheme"
+    },
+    "launch_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Scheme launch date"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date",
+      "description": "Application deadline"
+    },
+    "contact_info": {
+      "type": "string",
+      "description": "Contact information for queries"
+    },
+    "official_website": {
+      "type": "string",
+      "description": "Official website URL"
+    }
+  },
+  "required": [
+    "scheme_name",
+    "description",
+    "eligibility_criteria",
+    "benefits",
+    "category"
+  ]
+}

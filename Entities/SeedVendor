@@ -1,0 +1,82 @@
+{
+  "name": "SeedVendor",
+  "type": "object",
+  "properties": {
+    "vendor_name": {
+      "type": "string",
+      "description": "Name of the seed vendor"
+    },
+    "certification_status": {
+      "type": "string",
+      "enum": [
+        "certified",
+        "pending",
+        "not_certified"
+      ],
+      "description": "Certification status"
+    },
+    "location": {
+      "type": "string",
+      "description": "Vendor location"
+    },
+    "contact_number": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    },
+    "crops_available": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Types of crop seeds available"
+    },
+    "seed_varieties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "crop_name": {
+            "type": "string"
+          },
+          "variety_name": {
+            "type": "string"
+          },
+          "price_per_kg": {
+            "type": "number"
+          },
+          "available_quantity": {
+            "type": "number"
+          },
+          "germination_rate": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Available seed varieties with details"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Vendor rating"
+    },
+    "delivery_available": {
+      "type": "boolean",
+      "description": "Whether delivery is available"
+    },
+    "delivery_radius": {
+      "type": "number",
+      "description": "Delivery radius in kilometers"
+    }
+  },
+  "required": [
+    "vendor_name",
+    "location",
+    "contact_number",
+    "crops_available"
+  ]
+}
