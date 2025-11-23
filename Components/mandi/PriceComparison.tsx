@@ -1,0 +1,82 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+
+import { MandiPriceInterface } from '@/entities/MandiPrice';
+
+interface PriceComparisonProps {
+    prices: MandiPriceInterface[];
+    selectedCrop: string;
+}
+
+export default function PriceComparison({ prices, selectedCrop }: PriceComparisonProps) {
+    // Group prices by district for comparison
+    const comparisonData = prices
+        .filter(p => p.crop_name === selectedCrop)
+        .map(price => ({
+            district: price.district,
+            price: price.price_modal,
+            mandi: price.mandi_name
+        }))
+        .slice(0, 5); // Show top 5 districts
+
+    const averagePrice = comparisonData.reduce((sum, item) => sum + item.price, 0) / comparisonData.length || 0;
+
+    const getPriceTrend = (price: number) => {
+        const difference = ((price - averagePrice) / averagePrice) * 100;
+        if (difference > 5) return { icon: <TrendingUp className="w-4 h-4 text-green-600" />, text: 'Higher', color: 'text-green-600' };
+        if (difference < -5) return { icon: <TrendingDown className="w-4 h-4 text-red-600" />, text: 'Lower', color: 'text-red-600' };
+        return { icon: <Minus className="w-4 h-4 text-gray-600" />, text: 'Average', color: 'text-gray-600' };
+    };
+
+    return (
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                    <span>Price Comparison - {selectedCrop}</span>
+                    <Badge variant="outline">
+                        Avg: ₹{Math.round(averagePrice)}/Qtl
+                    </Badge>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer>
+                        <BarChart data={comparisonData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="district" />
+                            <YAxis domain={['dataMin - 100', 'dataMax + 100']} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="price" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                    <h4 className="font-semibold text-gray-900">District Analysis</h4>
+                    {comparisonData.map((item, index) => {
+                        const trend = getPriceTrend(item.price);
+                        return (
+                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span className="font-medium">{item.district}</span>
+                                    <span className="text-sm text-gray-500 ml-2">({item.mandi})</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold">₹{item.price}/Qtl</span>
+                                    <div className={`flex items-center gap-1 ${trend.color}`}>
+                                        {trend.icon}
+                                        <span className="text-xs">{trend.text}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}

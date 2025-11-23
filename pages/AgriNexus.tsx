@@ -1,0 +1,682 @@
+
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Bot,
+  Mic,
+  MicOff,
+  Send,
+  User,
+  Sparkles,
+  Volume2,
+  StopCircle,
+  Loader2,
+  MessageSquare,
+  Lightbulb,
+  Languages
+} from 'lucide-react';
+import { InvokeLLM } from '@/integrations/Core';
+import ReactMarkdown from 'react-markdown';
+
+export default function AgriNexus() {
+  interface Message {
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
+  }
+
+  const [language, setLanguage] = useState('english');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  interface UserContext {
+    name: string | null;
+    location: string | null;
+    crop: string | null;
+  }
+
+  const [userContext, setUserContext] = useState<UserContext>({
+    name: null,
+    location: null,
+    crop: null
+  });
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  const translations = {
+    english: {
+      title: "AgriNexus AI",
+      subtitle: "Your Smart Farming Assistant",
+      available: "24/7 Available",
+      voiceEnabled: "Voice Enabled",
+      welcomeMessage: "Namaste! 🙏 I'm AgriNexus AI, your trusted farming advisor. I'm here to help you grow better crops and make smarter farming decisions.\n\nLet's get started! What's your name?",
+      placeholder: "Type your message here... (Press Enter to send)",
+      thinking: "AgriNexus AI is thinking...",
+      suggestedTitle: "Quick Questions:",
+      voiceButton: "Voice",
+      stopButton: "Stop",
+      sendButton: "Send",
+      tipText: "💡 Tip: Use voice input in Hindi or English • Press Enter to send messages",
+      suggestedQuestions: [
+        "What crops should I grow this season?",
+        "My wheat crop has yellow leaves, what's wrong?",
+        "What's the current price of rice?",
+        "Tell me about PM-KISAN scheme",
+        "What's the weather forecast?",
+        "Which seeds are best for my soil?"
+      ]
+    },
+    hindi: {
+      title: "एग्रीनेक्सस AI",
+      subtitle: "आपका स्मार्ट खेती सहायक",
+      available: "24/7 उपलब्ध",
+      voiceEnabled: "आवाज़ सक्षम",
+      welcomeMessage: "नमस्ते! 🙏 मैं एग्रीनेक्सस AI हूं, आपका भरोसेमंद खेती सलाहकार। मैं यहां आपकी बेहतर फसल उगाने और स्मार्ट खेती के निर्णय लेने में मदद करने के लिए हूं।\n\nचलिए शुरू करते हैं! आपका नाम क्या है?",
+      placeholder: "अपना संदेश यहां लिखें... (भेजने के लिए Enter दबाएं)",
+      thinking: "एग्रीनेक्सस AI सोच रहा है...",
+      suggestedTitle: "त्वरित प्रश्न:",
+      voiceButton: "आवाज़",
+      stopButton: "रुकें",
+      sendButton: "भेजें",
+      tipText: "💡 सुझाव: हिंदी या अंग्रेजी में आवाज़ का उपयोग करें • संदेश भेजने के लिए Enter दबाएं",
+      suggestedQuestions: [
+        "इस मौसम में कौन सी फसलें उगाऊं?",
+        "मेरी गेहूं की फसल की पत्तियां पीली हैं, क्या गलत है?",
+        "चावल की वर्तमान कीमत क्या है?",
+        "PM-KISAN योजना के बारे में बताएं",
+        "मौसम का पूर्वानुमान क्या है?",
+        "मेरी मिट्टी के लिए कौन से बीज सबसे अच्छे हैं?"
+      ]
+    }
+  };
+
+  const t = translations[language as keyof typeof translations];
+
+  // Initialize welcome message based on language
+  useEffect(() => {
+    const welcomeMessage = language === 'hindi'
+      ? "नमस्ते! 🙏 मैं एग्रीनेक्सस AI हूं, आपका भरोसेमंद खेती सलाहकार। मैं यहां आपकी बेहतर फसल उगाने और स्मार्ट खेती के निर्णय लेने में मदद करने के लिए हूं।\n\nचलिए शुरू करते हैं! आपका नाम क्या है?"
+      : "Namaste! 🙏 I'm AgriNexus AI, your trusted farming advisor. I'm here to help you grow better crops and make smarter farming decisions.\n\nLet's get started! What's your name?";
+
+    setMessages([{
+      role: 'assistant',
+      content: welcomeMessage,
+      timestamp: new Date()
+    }]);
+  }, [language]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Load voices when component mounts
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      // Force load voices
+      let voices = window.speechSynthesis.getVoices();
+
+      if (voices.length === 0) {
+        // Chrome loads voices asynchronously
+        window.speechSynthesis.onvoiceschanged = () => {
+          voices = window.speechSynthesis.getVoices();
+        };
+      }
+    }
+  }, []);
+
+  const speakText = (text: string) => {
+    if (!('speechSynthesis' in window)) {
+      console.warn('Speech synthesis not supported');
+      return;
+    }
+
+    try {
+      // Cancel any ongoing speech first
+      window.speechSynthesis.cancel();
+
+      // Clean markdown formatting from text before speaking
+      const cleanText = text
+        .replace(/[#*`_~]/g, '') // Remove markdown symbols
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links but keep text
+        .replace(/\n{2,}/g, '. ') // Replace multiple newlines with periods
+        .replace(/\n/g, ', ') // Replace single newlines with commas
+        .replace(/•/g, '') // Remove bullet points
+        .trim();
+
+      // Don't speak if text is too short or empty
+      if (!cleanText || cleanText.length < 2) {
+        setIsSpeaking(false); // Ensure speaking state is reset
+        return;
+      }
+
+      // Break into chunks if text is too long (> 200 characters)
+      const maxLength = 200;
+      const chunks: string[] = [];
+
+      if (cleanText.length > maxLength) {
+        const sentences = cleanText.split(/[.!?\uff01\uff1f\u3002]+/).filter(s => s.trim()); // Split by common sentence endings, including Hindi
+        let currentChunk = '';
+
+        sentences.forEach(sentence => {
+          // If adding the current sentence exceeds maxLength, push currentChunk and start a new one
+          if ((currentChunk + sentence).length > maxLength) {
+            if (currentChunk) chunks.push(currentChunk.trim());
+            currentChunk = sentence + '. '; // Add back a period for natural pause
+          } else {
+            currentChunk += sentence + '. ';
+          }
+        });
+
+        if (currentChunk) chunks.push(currentChunk.trim());
+      } else {
+        chunks.push(cleanText);
+      }
+
+      // Get available voices
+      const voices = window.speechSynthesis.getVoices();
+
+      if (voices.length === 0) {
+        console.warn('No voices available yet');
+        setIsSpeaking(false);
+        return;
+      }
+
+      // Select appropriate voice based on language
+      let selectedVoice = null;
+      if (language === 'hindi') {
+        selectedVoice = voices.find(voice =>
+          voice.lang.toLowerCase().includes('hi-in') ||
+          voice.lang.toLowerCase().includes('hi')
+        );
+      } else {
+        selectedVoice = voices.find(voice =>
+          voice.lang.toLowerCase().includes('en-in')
+        ) || voices.find(voice =>
+          voice.lang.toLowerCase().includes('en-gb')
+        ) || voices.find(voice =>
+          voice.lang.toLowerCase().startsWith('en')
+        );
+      }
+
+      let currentChunkIndex = 0;
+
+      const speakChunk = () => {
+        if (currentChunkIndex >= chunks.length) {
+          setIsSpeaking(false);
+          return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(chunks[currentChunkIndex]);
+
+        // Set voice parameters
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+        utterance.lang = language === 'hindi' ? 'hi-IN' : 'en-IN';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        utterance.onstart = () => {
+          if (currentChunkIndex === 0) {
+            setIsSpeaking(true);
+          }
+        };
+
+        utterance.onend = () => {
+          currentChunkIndex++;
+          speakChunk(); // Speak next chunk
+        };
+
+        utterance.onerror = (event) => {
+          // Don't log 'interrupted' or 'canceled' as errors - they're expected when user stops speech
+          if (event.error === 'interrupted' || event.error === 'canceled') {
+            setIsSpeaking(false);
+            return;
+          }
+
+          // Log other actual errors
+          console.error('Speech error:', event.error);
+          setIsSpeaking(false);
+
+          // For other errors, stop speaking
+          window.speechSynthesis.cancel();
+        };
+
+        // Small delay before speaking to ensure previous utterance is done
+        setTimeout(() => {
+          window.speechSynthesis.speak(utterance);
+        }, 50);
+      };
+
+      // Start speaking the first chunk
+      speakChunk();
+
+    } catch (error) {
+      console.error('Speech synthesis error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const stopSpeaking = () => {
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      }
+    } catch (error) {
+      console.error('Error stopping speech:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const handleSendMessage = async (messageText = inputMessage) => {
+    if (!messageText.trim()) return;
+
+    // Stop speaking when user sends a new message
+    stopSpeaking();
+
+    const userMessage: Message = {
+      role: 'user',
+      content: messageText,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    try {
+      // Build conversational context
+      let contextInfo = '';
+      if (!userContext.name && messages.length <= 2) {
+        // First interaction - likely getting name
+        contextInfo = 'The user just introduced themselves. Extract their name if provided, then warmly acknowledge and ask about their location (village/district).';
+      } else if (userContext.name && !userContext.location) {
+        contextInfo = `The user's name is ${userContext.name}. Now ask about their village or district location.`;
+      } else if (userContext.location && !userContext.crop) {
+        contextInfo = `User: ${userContext.name} from ${userContext.location}. Now ask what crop they're currently growing or planning to grow.`;
+      } else if (userContext.name && userContext.location && userContext.crop) {
+        contextInfo = `User context: ${userContext.name} from ${userContext.location}, growing ${userContext.crop}.`;
+      }
+
+      const languageInstruction = language === 'hindi'
+        ? 'Respond in Hindi (Devanagari script) with simple words farmers understand. Be warm, empathetic, and conversational like a trusted village advisor.'
+        : 'Respond in simple English that Indian farmers understand. Be warm, empathetic, and conversational like a trusted advisor. Use Hinglish naturally when appropriate.';
+
+      const prompt = `You are AgriNexus AI, a warm and empathetic farming advisor for Indian farmers. Speak like a trusted friend and consultant.
+
+${languageInstruction}
+
+${contextInfo}
+
+User's message: ${messageText}
+
+Guidelines:
+- Be extremely conversational and friendly (like ChatGPT voice assistant)
+- Use a warm, approachetic tone - sound like a helpful village elder or trusted consultant
+- Keep responses clear, concise, and actionable (temperature: 0.5 for factual clarity)
+- If user shares their name, acknowledge it warmly and ask about their location next
+- If they share location, acknowledge and ask about their current crop
+- Once you know context, provide highly specific, personalized advice
+- For agricultural advice, be factual and clear. If uncertain, say: "I'm not 100% sure about this - I recommend checking with your local agricultural expert to be safe."
+- Never guess on critical farming decisions - always suggest expert verification
+- Reference real government programs (PM-KISAN, Kisan Credit Card, Soil Health Card, etc.)
+- If you don't understand something, politely say: "Sorry, I didn't fully get that. Could you explain again?"
+
+Respond naturally:`;
+
+      const response = await InvokeLLM({
+        prompt,
+        add_context_from_internet: true
+      });
+
+      // Extract context from conversation
+      if (!userContext.name && messages.length <= 1) { // Check if it's the very first user message
+        // Simple heuristic: if response is short and early in conversation, might be a name
+        const words = messageText.split(' ');
+        if (words.length <= 3) { // Assuming a name is usually 1-3 words
+          setUserContext(prev => ({ ...prev, name: messageText }));
+        }
+      }
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: response,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
+      // Auto-speak response if supported
+      if ('speechSynthesis' in window) {
+        speakText(response);
+      }
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: language === 'hindi'
+          ? 'क्षमा करें, मुझे एक तकनीकी समस्या का सामना करना पड़ा। कृपया पुनः प्रयास करें। 🙏'
+          : 'Sorry, I encountered a technical issue. Please try again. 🙏',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  };
+
+  const startVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert(language === 'hindi'
+        ? 'इस ब्राउज़र में आवाज़ इनपुट समर्थित नहीं है। कृपया Chrome या Edge का उपयोग करें।'
+        : 'Voice input not supported in this browser. Please use Chrome or Edge.'
+      );
+      return;
+    }
+
+    try {
+      stopSpeaking(); // Stop any ongoing speech before starting voice input
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = language === 'hindi' ? 'hi-IN' : 'en-IN';
+
+      if (recognitionRef.current) {
+        (recognitionRef.current as any).onstart = () => {
+          setIsListening(true);
+        };
+
+        (recognitionRef.current as any).onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInputMessage(transcript);
+          handleSendMessage(transcript);
+        };
+
+        (recognitionRef.current as any).onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+
+          if (event.error === 'no-speech') {
+            alert(language === 'hindi'
+              ? 'कोई आवाज़ नहीं सुनी गई। कृपया पुनः प्रयास करें।'
+              : 'No speech detected. Please try again.'
+            );
+          }
+        };
+
+        (recognitionRef.current as any).onend = () => {
+          setIsListening(false);
+        };
+
+        (recognitionRef.current as any).start();
+      }
+    } catch (error) {
+      console.error('Error starting voice input:', error);
+      setIsListening(false);
+    }
+  };
+
+  const stopVoiceInput = () => {
+    try {
+      if (recognitionRef.current) {
+        (recognitionRef.current as any).stop();
+        setIsListening(false);
+      }
+    } catch (error) {
+      console.error('Error stopping voice input:', error);
+      setIsListening(false);
+    }
+  };
+
+  const handleSuggestedQuestion = (question: string) => {
+    handleSendMessage(question);
+  };
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    // Stop any ongoing speech or listening
+    stopSpeaking();
+    stopVoiceInput();
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto h-[calc(100vh-120px)] flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-t-3xl p-6 shadow-2xl">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
+                <Bot className="w-10 h-10 text-green-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+                  {t.title}
+                  <Sparkles className="w-6 h-6 text-yellow-300" />
+                </h1>
+                <p className="text-green-100 text-sm">{t.subtitle}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Language Selector */}
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/30">
+                <Languages className="w-4 h-4 text-white" />
+                <Select value={language} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="border-none bg-transparent text-white font-medium w-32 h-auto p-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="english">English</SelectItem>
+                    <SelectItem value="hindi">हिंदी</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Badge className="bg-white/20 text-white border-white/30 px-4 py-2">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                {t.available}
+              </Badge>
+              <Badge className="bg-white/20 text-white border-white/30 px-4 py-2">
+                <Volume2 className="w-4 h-4 mr-2" />
+                {t.voiceEnabled}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Chat Messages Area */}
+        <div className="flex-1 bg-white rounded-b-3xl shadow-2xl flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex gap-4 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+              >
+                {/* Avatar */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${message.role === 'assistant'
+                  ? 'bg-gradient-to-r from-green-500 to-blue-500'
+                  : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                  }`}>
+                  {message.role === 'assistant' ? (
+                    <Bot className="w-6 h-6 text-white" />
+                  ) : (
+                    <User className="w-6 h-6 text-white" />
+                  )}
+                </div>
+
+                {/* Message Bubble */}
+                <div className={`flex-1 max-w-[80%] ${message.role === 'user' ? 'flex justify-end' : ''}`}>
+                  <div className={`rounded-2xl p-4 ${message.role === 'assistant'
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'bg-gradient-to-r from-green-600 to-blue-600 text-white'
+                    }`}>
+                    {message.role === 'assistant' ? (
+                      <div className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc ml-4 mb-2 space-y-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 space-y-1">{children}</ol>,
+                            li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                            strong: ({ children }) => <strong className="font-bold text-green-700">{children}</strong>,
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="leading-relaxed">{message.content}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200/20">
+                      <span className={`text-xs ${message.role === 'assistant' ? 'text-gray-500' : 'text-white/70'
+                        }`}>
+                        {message.timestamp.toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      {message.role === 'assistant' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => isSpeaking ? stopSpeaking() : speakText(message.content)}
+                          className="h-6 px-2"
+                        >
+                          {isSpeaking ? (
+                            <StopCircle className="w-4 h-4 text-red-500" />
+                          ) : (
+                            <Volume2 className="w-4 h-4 text-green-600" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {isLoading && (
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center">
+                  <Bot className="w-6 h-6 text-white" />
+                </div>
+                <div className="bg-gray-100 rounded-2xl p-4">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-green-600" />
+                    <span className="text-gray-600">{t.thinking}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Suggested Questions */}
+          {messages.length === 1 && (
+            <div className="px-6 pb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-5 h-5 text-amber-500" />
+                <span className="text-sm font-semibold text-gray-700">{t.suggestedTitle}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {t.suggestedQuestions.map((question, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    onClick={() => handleSuggestedQuestion(question)}
+                    className="justify-start text-left h-auto py-3 hover:bg-green-50 hover:border-green-300"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0 text-green-600" />
+                    <span className="text-sm">{question}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Input Area */}
+          <div className="border-t border-gray-200 p-6 bg-gray-50">
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
+                <Textarea
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder={t.placeholder}
+                  className="min-h-[60px] max-h-[120px] resize-none pr-12 border-2 focus:border-green-500"
+                  disabled={isLoading || isListening}
+                />
+                {isListening && (
+                  <div className="absolute bottom-3 right-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={isListening ? stopVoiceInput : startVoiceInput}
+                  disabled={isLoading}
+                  className={`px-4 ${isListening
+                    ? 'bg-red-500 hover:bg-red-600'
+                    : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                    }`}
+                >
+                  {isListening ? (
+                    <>
+                      <MicOff className="w-5 h-5 mr-2" />
+                      {t.stopButton}
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-5 h-5 mr-2" />
+                      {t.voiceButton}
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputMessage.trim() || isLoading || isListening}
+                  className="px-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5 mr-2" />
+                      {t.sendButton}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-500 mt-3 text-center">
+              {t.tipText}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
