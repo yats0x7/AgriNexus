@@ -36,6 +36,12 @@ export async function getWeatherData(
     state: string,
     village?: string
 ): Promise<WeatherData> {
+    // If no API key, skip API calls and return mock data immediately
+    if (!API_KEY) {
+        console.warn('No OpenWeatherMap API key configured. Using mock weather data.');
+        return getMockWeatherData(district, state);
+    }
+
     try {
         const location = village ? `${village}, ${district}, ${state}, India` : `${district}, ${state}, India`;
 
@@ -44,7 +50,7 @@ export async function getWeatherData(
         const geoResponse = await fetch(geoUrl);
         const geoData = await geoResponse.json();
 
-        if (!geoData || geoData.length === 0) {
+        if (!Array.isArray(geoData) || geoData.length === 0) {
             throw new Error('Location not found');
         }
 
@@ -116,8 +122,7 @@ export async function getWeatherData(
         };
     } catch (error) {
         console.error('Error fetching weather data:', error);
-        // Return mock data as fallback
-        return getMockWeatherData(district);
+        return getMockWeatherData(district, state);
     }
 }
 
@@ -135,29 +140,80 @@ function getWeatherCondition(main: string): string {
     return conditions[main] || 'cloudy';
 }
 
-function getMockWeatherData(location: string): WeatherData {
+// Region-based weather profiles for realistic mock data
+interface RegionWeather {
+    tempBase: number; tempRange: number; humidity: number; wind: number;
+    conditions: string[]; rainChance: number; uvIndex: number;
+}
+
+const regionProfiles: Record<string, RegionWeather> = {
+    arid: { tempBase: 38, tempRange: 8, humidity: 25, wind: 18, conditions: ['Clear Sky', 'Sunny', 'Haze'], rainChance: 10, uvIndex: 9 },
+    northern: { tempBase: 22, tempRange: 12, humidity: 55, wind: 10, conditions: ['Partly Cloudy', 'Sunny', 'Haze', 'Foggy'], rainChance: 30, uvIndex: 5 },
+    coastal: { tempBase: 30, tempRange: 5, humidity: 80, wind: 20, conditions: ['Partly Cloudy', 'Light Rain', 'Cloudy', 'Humid'], rainChance: 60, uvIndex: 7 },
+    eastern: { tempBase: 28, tempRange: 8, humidity: 75, wind: 12, conditions: ['Cloudy', 'Light Rain', 'Thunderstorm', 'Humid'], rainChance: 55, uvIndex: 6 },
+    southern: { tempBase: 32, tempRange: 6, humidity: 65, wind: 14, conditions: ['Sunny', 'Partly Cloudy', 'Light Rain'], rainChance: 40, uvIndex: 8 },
+    hilly: { tempBase: 15, tempRange: 10, humidity: 60, wind: 15, conditions: ['Cloudy', 'Light Rain', 'Misty', 'Clear Sky'], rainChance: 45, uvIndex: 4 },
+};
+
+const stateToRegion: Record<string, string> = {
+    'rajasthan': 'arid', 'gujarat': 'arid',
+    'punjab': 'northern', 'haryana': 'northern', 'uttar pradesh': 'northern', 'delhi': 'northern',
+    'madhya pradesh': 'northern', 'bihar': 'eastern',
+    'kerala': 'coastal', 'goa': 'coastal', 'andhra pradesh': 'coastal', 'odisha': 'coastal',
+    'west bengal': 'eastern', 'assam': 'eastern', 'jharkhand': 'eastern', 'chhattisgarh': 'eastern',
+    'tamil nadu': 'southern', 'karnataka': 'southern', 'telangana': 'southern', 'maharashtra': 'southern',
+    'himachal pradesh': 'hilly', 'uttarakhand': 'hilly', 'sikkim': 'hilly',
+    'jammu': 'hilly', 'arunachal pradesh': 'hilly', 'meghalaya': 'hilly',
+    'nagaland': 'hilly', 'manipur': 'hilly', 'mizoram': 'hilly', 'tripura': 'eastern',
+};
+
+// Simple hash for deterministic but varied data per location
+function locationSeed(location: string): number {
+    let hash = 0;
+    for (let i = 0; i < location.length; i++) {
+        hash = ((hash << 5) - hash) + location.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash);
+}
+
+function getMockWeatherData(district: string, state?: string): WeatherData {
+    const regionKey = state ? stateToRegion[state.toLowerCase()] || 'northern' : 'northern';
+    const profile = regionProfiles[regionKey];
+    const seed = locationSeed(district + (state || ''));
+
+    // Deterministic variation based on location
+    const tempVariation = (seed % profile.tempRange) - profile.tempRange / 2;
+    const currentTemp = Math.round(profile.tempBase + tempVariation);
+    const currentCondition = profile.conditions[seed % profile.conditions.length];
+
+    const forecastConditions = ['sunny', 'cloudy', 'rainy', 'stormy'];
+
     return {
         current: {
-            temp: 28,
-            condition: 'Partly Cloudy',
-            humidity: 65,
-            wind: 12,
-            visibility: 10,
-            pressure: 1013,
-            uv_index: 6,
-            feels_like: 30
+            temp: currentTemp,
+            condition: currentCondition,
+            humidity: Math.round(profile.humidity + (seed % 15) - 7),
+            wind: Math.round(profile.wind + (seed % 8) - 4),
+            visibility: Math.round(8 + (seed % 7)),
+            pressure: Math.round(1005 + (seed % 20)),
+            uv_index: Math.min(11, Math.round(profile.uvIndex + (seed % 3) - 1)),
+            feels_like: Math.round(currentTemp + 2 + (seed % 3))
         },
-        forecast: Array.from({ length: 7 }, (_, i) => ({
-            day: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
-            date: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            temp_max: 30 + Math.floor(Math.random() * 5),
-            temp_min: 20 + Math.floor(Math.random() * 5),
-            condition: ['sunny', 'cloudy', 'rainy'][Math.floor(Math.random() * 3)],
-            rain_chance: Math.floor(Math.random() * 60),
-            rainfall: Math.floor(Math.random() * 10)
-        })),
+        forecast: Array.from({ length: 7 }, (_, i) => {
+            const daySeed = locationSeed(district + i.toString());
+            return {
+                day: new Date(Date.now() + i * 86400000).toLocaleDateString('en-US', { weekday: 'short' }),
+                date: new Date(Date.now() + i * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                temp_max: Math.round(currentTemp + 2 + (daySeed % 5)),
+                temp_min: Math.round(currentTemp - 6 - (daySeed % 4)),
+                condition: forecastConditions[daySeed % forecastConditions.length],
+                rain_chance: Math.round(profile.rainChance + (daySeed % 25) - 12),
+                rainfall: Math.round(Math.max(0, (daySeed % 15) - 5))
+            };
+        }),
         location: {
-            name: location,
+            name: district,
             country: 'IN'
         }
     };

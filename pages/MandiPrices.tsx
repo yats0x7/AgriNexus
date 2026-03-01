@@ -136,7 +136,8 @@ export default function MandiPrices() {
         if (filteredPrices.length > 0) {
             generateAiInsights();
         }
-    }, [generateAiInsights, filteredPrices]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filteredPrices]);
 
     const handleVoiceSearch = (transcript: string): void => {
         const lowerTranscript = transcript.toLowerCase();

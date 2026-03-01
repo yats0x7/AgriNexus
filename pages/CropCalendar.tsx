@@ -11,6 +11,7 @@ interface CropStage {
     duration: number;
     icon: React.ReactElement;
     color: string;
+    borderColor: string;
 }
 
 interface ScheduleItem extends CropStage {
@@ -20,16 +21,16 @@ interface ScheduleItem extends CropStage {
 
 const cropCycles: Record<string, CropStage[]> = {
     "Rice": [
-        { stage: "Sowing", duration: 7, icon: <Sprout />, color: "text-green-600" },
-        { stage: "Germination & Growth", duration: 40, icon: <Droplets />, color: "text-blue-600" },
-        { stage: "Flowering", duration: 30, icon: <FlaskConical />, color: "text-amber-600" },
-        { stage: "Harvesting", duration: 20, icon: <Scissors />, color: "text-red-600" },
+        { stage: "Sowing", duration: 7, icon: <Sprout />, color: "text-green-600", borderColor: "#16a34a" },
+        { stage: "Germination & Growth", duration: 40, icon: <Droplets />, color: "text-blue-600", borderColor: "#2563eb" },
+        { stage: "Flowering", duration: 30, icon: <FlaskConical />, color: "text-amber-600", borderColor: "#d97706" },
+        { stage: "Harvesting", duration: 20, icon: <Scissors />, color: "text-red-600", borderColor: "#dc2626" },
     ],
     "Wheat": [
-        { stage: "Sowing", duration: 10, icon: <Sprout />, color: "text-green-600" },
-        { stage: "Tillering", duration: 45, icon: <Droplets />, color: "text-blue-600" },
-        { stage: "Grain Filling", duration: 35, icon: <FlaskConical />, color: "text-amber-600" },
-        { stage: "Harvesting", duration: 20, icon: <Scissors />, color: "text-red-600" },
+        { stage: "Sowing", duration: 10, icon: <Sprout />, color: "text-green-600", borderColor: "#16a34a" },
+        { stage: "Tillering", duration: 45, icon: <Droplets />, color: "text-blue-600", borderColor: "#2563eb" },
+        { stage: "Grain Filling", duration: 35, icon: <FlaskConical />, color: "text-amber-600", borderColor: "#d97706" },
+        { stage: "Harvesting", duration: 20, icon: <Scissors />, color: "text-red-600", borderColor: "#dc2626" },
     ],
 };
 
@@ -96,7 +97,7 @@ export default function CropCalendar() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {schedule.map((phase, index) => (
-                                <div key={index} className="p-4 rounded-lg border flex items-start gap-4" style={{ borderLeft: '4px solid', borderLeftColor: phase.color.replace('text-', '').replace('-600', '') }}>
+                                <div key={index} className="p-4 rounded-lg border flex items-start gap-4" style={{ borderLeft: '4px solid', borderLeftColor: phase.borderColor }}>
                                     <div className={`p-2 rounded-full bg-gray-100 ${phase.color}`}>
                                         {React.cloneElement(phase.icon as any, { className: 'w-6 h-6' })}
                                     </div>

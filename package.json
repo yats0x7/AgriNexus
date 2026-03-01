@@ -2,7 +2,6 @@
   "name": "agri",
   "version": "1.0.0",
   "description": "",
-  "main": "layout.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -37,9 +37,9 @@ export default function SeedMarketplace() {
     const [vendors, setVendors] = useState<SeedVendorInterface[]>([]);
     const [filteredSeeds, setFilteredSeeds] = useState<SeedVarietyInterface[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedSoil, setSelectedSoil] = useState("");
-    const [selectedSeason, setSelectedSeason] = useState("");
-    const [selectedCrop, setSelectedCrop] = useState("");
+    const [selectedSoil, setSelectedSoil] = useState("all");
+    const [selectedSeason, setSelectedSeason] = useState("all");
+    const [selectedCrop, setSelectedCrop] = useState("all");
     const [isLoading, setIsLoading] = useState(false);
     const [selectedSeed, setSelectedSeed] = useState<SeedVarietyInterface | null>(null);
     const [showModal, setShowModal] = useState(false);
@@ -53,7 +53,7 @@ export default function SeedMarketplace() {
         try {
             const [seedData, vendorData] = await Promise.all([
                 SeedVariety.filter({ state: selectedState, district: selectedDistrict }),
-                SeedVendor.filter({ location: `${selectedDistrict}, ${selectedState}` })
+                SeedVendor.filter({ state: selectedState, district: selectedDistrict })
             ]);
             setSeeds(seedData);
             setVendors(vendorData);
@@ -74,17 +74,17 @@ export default function SeedMarketplace() {
             );
         }
 
-        if (selectedSoil) {
+        if (selectedSoil && selectedSoil !== "all") {
             result = result.filter(seed =>
                 seed.soil_suitability?.includes(selectedSoil)
             );
         }
 
-        if (selectedSeason) {
+        if (selectedSeason && selectedSeason !== "all") {
             result = result.filter(seed => seed.recommended_season === selectedSeason);
         }
 
-        if (selectedCrop) {
+        if (selectedCrop && selectedCrop !== "all") {
             result = result.filter(seed => seed.crop_name === selectedCrop);
         }
 
@@ -295,7 +295,7 @@ export default function SeedMarketplace() {
                                         <SelectValue placeholder="Select soil type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">All Soil Types</SelectItem>
+                                        <SelectItem value="all">All Soil Types</SelectItem>
                                         {soilTypes.map(soil => (
                                             <SelectItem key={soil} value={soil}>{soil}</SelectItem>
                                         ))}
@@ -310,7 +310,7 @@ export default function SeedMarketplace() {
                                         <SelectValue placeholder="Select season" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">All Seasons</SelectItem>
+                                        <SelectItem value="all">All Seasons</SelectItem>
                                         {seasons.map(season => (
                                             <SelectItem key={season} value={season}>{season}</SelectItem>
                                         ))}
@@ -327,7 +327,7 @@ export default function SeedMarketplace() {
                                         <SelectValue placeholder="Select crop" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">All Crops</SelectItem>
+                                        <SelectItem value="all">All Crops</SelectItem>
                                         {crops.map(crop => (
                                             <SelectItem key={crop} value={crop}>{crop}</SelectItem>
                                         ))}
@@ -579,10 +579,6 @@ export default function SeedMarketplace() {
                             <p className="text-xs text-gray-500">
                                 Last updated: {filteredSeeds[0]?.last_updated ? format(new Date(filteredSeeds[0].last_updated), 'MMM dd, yyyy HH:mm') : 'N/A'}
                             </p>
-                            <div className="flex justify-center gap-4 text-xs text-gray-500">
-                                <a href="/privacy" className="hover:text-gray-700">Privacy</a>
-                                <a href="/help" className="hover:text-gray-700">Help</a>
-                            </div>
                         </div>
                     </CardContent>
                 </Card>

@@ -3,11 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import LocationSelector from '../components/shared/LocationSelector';
-import { WeatherAlert as WeatherAlertEntity } from '@/entities/WeatherAlert';
+import { WeatherAlert as WeatherAlertEntity, WeatherAlertInterface } from '@/entities/WeatherAlert';
+import { districtsByState } from '@/data/districts';
 import {
     Cloud, Sun, CloudRain, Wind, Droplets, Thermometer,
-    AlertTriangle, CloudLightning, Eye, Gauge, Brain, MessageCircle
+    AlertTriangle, CloudLightning, Eye, Gauge, Brain, MessageCircle,
+    Search, MapPinned, Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { InvokeLLM } from '@/integrations/Core';
@@ -34,13 +37,7 @@ interface ForecastDay {
     rainfall: number;
 }
 
-interface WeatherAlert {
-    type: string;
-    message: string;
-    severity: 'low' | 'moderate' | 'high' | 'extreme';
-    icon?: ReactNode;
-    advisory: string[];
-}
+
 
 // Mock weather data simulating Meghdoot + mKisan API response
 const generateWeatherData = (location: string): WeatherData => ({
@@ -77,12 +74,13 @@ const weatherIcons: Record<string, React.ReactElement> = {
 };
 
 export default function Weather() {
-    const [selectedState, setSelectedState] = useState<string>("Punjab");
-    const [selectedDistrict, setSelectedDistrict] = useState<string>("Ludhiana");
+    const [selectedState, setSelectedState] = useState<string>("");
+    const [selectedDistrict, setSelectedDistrict] = useState<string>("");
     const [village, setVillage] = useState<string>("");
     const [weather, setWeather] = useState<WeatherData | null>(null);
-    const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
+    const [alerts, setAlerts] = useState<WeatherAlertInterface[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [detectingLocation, setDetectingLocation] = useState<boolean>(false);
     const [aiAdvice, setAiAdvice] = useState<{
         field_operations: string;
         crop_protection: string;
@@ -92,6 +90,7 @@ export default function Weather() {
     } | null>(null);
     const [loadingAdvice, setLoadingAdvice] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [locationError, setLocationError] = useState<string | null>(null);
 
     const fetchWeatherData = React.useCallback(async () => {
         setIsLoading(true);
@@ -104,7 +103,7 @@ export default function Weather() {
 
             // Fetch weather alerts from database
             const weatherAlerts = await WeatherAlertEntity.filter({
-                location: `${selectedDistrict}, ${selectedState}`
+                state: selectedState
             });
             setAlerts(weatherAlerts);
         } catch (error) {
@@ -163,14 +162,94 @@ export default function Weather() {
     }, [weather, village, selectedDistrict, selectedState]);
 
     useEffect(() => {
-        fetchWeatherData();
-    }, [fetchWeatherData]);
+        detectUserLocation();
+    }, []);
+
+    // Auto-fetch weather when geolocation resolves
+    const [autoFetched, setAutoFetched] = useState(false);
+    useEffect(() => {
+        if (selectedState && selectedDistrict && !autoFetched && !weather) {
+            setAutoFetched(true);
+            fetchWeatherData();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedState, selectedDistrict]);
+
+    const detectUserLocation = async () => {
+        if (!navigator.geolocation) {
+            setLocationError('Geolocation is not supported by your browser');
+            // Fall back to default
+            setSelectedState('Punjab');
+            setSelectedDistrict('Ludhiana');
+            return;
+        }
+
+        setDetectingLocation(true);
+        setLocationError(null);
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords;
+                    // Reverse geocode using OpenStreetMap Nominatim (free, no API key needed)
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+                        { headers: { 'Accept-Language': 'en' } }
+                    );
+                    const data = await response.json();
+
+                    if (data?.address) {
+                        const detectedState = data.address.state || '';
+                        const detectedDistrict = data.address.state_district || data.address.county || data.address.city || '';
+
+                        // Match to our state list
+                        const matchedState = Object.keys(districtsByState).find(
+                            s => s.toLowerCase() === detectedState.toLowerCase()
+                        );
+
+                        if (matchedState) {
+                            setSelectedState(matchedState);
+                            // Match district
+                            const districts = districtsByState[matchedState];
+                            const matchedDistrict = districts.find(
+                                d => detectedDistrict.toLowerCase().includes(d.toLowerCase()) ||
+                                    d.toLowerCase().includes(detectedDistrict.toLowerCase())
+                            );
+                            setSelectedDistrict(matchedDistrict || districts[0]);
+                        } else {
+                            setSelectedState('Punjab');
+                            setSelectedDistrict('Ludhiana');
+                        }
+
+                        if (data.address.village || data.address.hamlet || data.address.suburb) {
+                            setVillage(data.address.village || data.address.hamlet || data.address.suburb || '');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Reverse geocoding failed:', err);
+                    setSelectedState('Punjab');
+                    setSelectedDistrict('Ludhiana');
+                } finally {
+                    setDetectingLocation(false);
+                }
+            },
+            (err) => {
+                console.warn('Geolocation denied:', err.message);
+                setLocationError('Location access denied. Please select manually.');
+                setSelectedState('Punjab');
+                setSelectedDistrict('Ludhiana');
+                setDetectingLocation(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
 
     useEffect(() => {
         if (weather) {
             generateWeatherAdvice();
         }
-    }, [generateWeatherAdvice, weather]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [weather]);
 
     const getCurrentIcon = (condition: string): React.ReactElement => {
         if (condition.includes('Sun')) return <Sun className="w-16 h-16 text-white" />;
@@ -221,7 +300,7 @@ export default function Weather() {
                     setSelectedDistrict={setSelectedDistrict}
                 />
 
-                {/* Village Input */}
+                {/* Village Input + Search Button */}
                 <Card className="shadow-lg">
                     <CardContent className="pt-6">
                         <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -232,9 +311,34 @@ export default function Weather() {
                                     value={village}
                                     onChange={(e) => setVillage(e.target.value)}
                                     placeholder="Enter your village name"
+                                    onKeyDown={(e) => e.key === 'Enter' && fetchWeatherData()}
                                 />
                             </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={() => detectUserLocation()}
+                                    variant="outline"
+                                    disabled={detectingLocation}
+                                    className="gap-2"
+                                >
+                                    {detectingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPinned className="w-4 h-4" />}
+                                    {detectingLocation ? 'Detecting...' : 'Use My Location'}
+                                </Button>
+                                <Button
+                                    onClick={fetchWeatherData}
+                                    disabled={isLoading || !selectedState || !selectedDistrict}
+                                    className="gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                                    {isLoading ? 'Fetching...' : 'Get Weather'}
+                                </Button>
+                            </div>
                         </div>
+                        {locationError && (
+                            <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" /> {locationError}
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -298,7 +402,7 @@ export default function Weather() {
                                             <p className="text-5xl font-bold">{weather.current.temp}°C</p>
                                             <p className="text-xl text-sky-100">{weather.current.condition}</p>
                                             <p className="text-sm text-sky-200 mt-2">
-                                                Feels like {weather.current.temp + 2}°C
+                                                Feels like {weather.current.feels_like}°C
                                             </p>
                                         </div>
                                     </div>
@@ -386,7 +490,7 @@ export default function Weather() {
                                     {alerts.map((alert, index) => (
                                         <Alert key={index} className={getAlertColor(alert.severity)}>
                                             <div className="flex items-start gap-2">
-                                                {alert.icon || <AlertTriangle className="h-4 w-4" />}
+                                                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                                 <div>
                                                     <h4 className="font-semibold">{alert.type}</h4>
                                                     <AlertDescription className="mt-1">

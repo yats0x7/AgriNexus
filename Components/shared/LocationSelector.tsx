@@ -1,23 +1,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin } from "lucide-react";
-
-const indianStates = [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-    "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
-];
-
-// Mock districts for demonstration
-// Mock districts for demonstration
-const districtsByState: Record<string, string[]> = {
-    "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
-    "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala"],
-    "Uttar Pradesh": ["Lucknow", "Kanpur", "Ghaziabad", "Agra", "Muzaffarnagar"],
-    "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore"],
-    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],
-};
+import { indianStates, districtsByState } from '@/data/districts';
 
 interface LocationSelectorProps {
     selectedState: string;

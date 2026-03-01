@@ -38,6 +38,12 @@ const navigationItems = [
         color: "text-emerald-600"
     },
     {
+        title: "AgriNexus AI",
+        url: "/AgriNexus",
+        icon: Brain,
+        color: "text-indigo-600"
+    },
+    {
         title: "AI Doctor",
         url: "/AiDoctor",
         icon: Stethoscope,
@@ -74,10 +80,16 @@ const navigationItems = [
         color: "text-orange-600"
     },
     {
+        title: "Seeds Marketplace",
+        url: "/SeedsMarketplace",
+        icon: Sprout,
+        color: "text-lime-600"
+    },
+    {
         title: "Seed Recommendations",
         url: "/SeedsRecommendations",
-        icon: Brain,
-        color: "text-indigo-600"
+        icon: Sprout,
+        color: "text-green-700"
     },
     {
         title: "Fertilizer Guide",

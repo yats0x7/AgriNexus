@@ -228,7 +228,7 @@ export default function ExpertAdvicePage() {
                                             <p className="font-semibold text-gray-800 text-sm truncate">{q.query_text}</p>
                                             <div className="flex justify-between items-center mt-2">
                                                 <p className="text-xs text-gray-500">{q.farmer_name} from {q.location}</p>
-                                                <Badge variant={q.status === 'answered' ? 'success' : 'outline'}>{q.status}</Badge>
+                                                <Badge variant="outline" className={q.status === 'answered' ? 'bg-green-100 text-green-800 border-green-200' : ''}>{q.status}</Badge>
                                             </div>
                                         </div>
                                     ))}
@@ -239,8 +239,8 @@ export default function ExpertAdvicePage() {
                 </Tabs>
 
                 {selectedAdvice && (
-                    <Card className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setSelectedAdvice(null)}>
-                        <CardContent className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-8 space-y-6 relative" onClick={e => e.stopPropagation()}>
+                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setSelectedAdvice(null)}>
+                        <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-8 space-y-6 relative" onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setSelectedAdvice(null)}>X</Button>
                             <CardTitle>{selectedAdvice.title}</CardTitle>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
@@ -257,8 +257,8 @@ export default function ExpertAdvicePage() {
                                     )}
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
